@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'rec.dart';
 
 import 'package:face_savior/data.dart';
 import 'package:flutter/cupertino.dart';
@@ -19,21 +21,20 @@ class MyApp extends StatelessWidget {
       title: 'Face Savior',
       theme: ThemeData(primarySwatch: Colors.brown),
       debugShowCheckedModeBanner: false,
-      home: const LayoutWidget(
-        child: DataLoader(),
+      home:  LayoutWidget(
+        child: const DataLoader(),
       ),
     );
   }
 }
 
 class LayoutWidget extends StatelessWidget {
-  const LayoutWidget({
+   const LayoutWidget({
     Key? key,
     required this.child,
   }) : super(key: key);
 
   final Widget child;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,6 +96,15 @@ class HomePage extends StatelessWidget {
   final List<PersonalSeri> data;
 
   void startChallenge(context, [int count = 4]) {
+    if(frii!=true){
+      sstop();
+    }
+    totalwrong=0;
+    totalright=0;
+    totalquestion=count;
+    totalskip=0;
+    frii=true;
+    fri=true;
     final n = <PersonalSeri>{};
     while (n.length != count) {
       final i = Random(null).nextInt(data.length);
@@ -198,12 +208,41 @@ class _FaceSaviorPageState extends State<FaceSaviorPage> {
 
   var index = 0;
 
+
+
+  void smallstop() {
+    a=10;
+    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      a--;
+      if(a==0){
+        timer.cancel();
+        if (index != data.length - 1) {
+          nextPerson();
+          totalskip++;
+        } else {
+          recstop();
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Congratulations'),
+              content: Text('Congratulations\n本次问题数量:$totalquestion\n回答正确数量:$totalright\n回答错误数量:$totalwrong\n跳过问题数量:$totalskip\n总用时:$totaltime'),
+            ),
+          ).then((_) => Navigator.of(context).pop());
+        }
+      }
+      setState((){});
+    });
+  }
+
+
   PersonalSeri get person => widget.data[index % widget.data.length];
 
   List<PersonalSeri> get data => widget.data;
 
   void checkAnswer(bool correct) {
     if (correct) {
+      sstop();
+      totalright++;
       showDialog(
         context: context,
         builder: (_) => const AlertDialog(
@@ -213,16 +252,18 @@ class _FaceSaviorPageState extends State<FaceSaviorPage> {
         if (index != data.length - 1) {
           nextPerson();
         } else {
+          recstop();
           showDialog(
             context: context,
-            builder: (_) => const AlertDialog(
-              title: Text('Congratulations'),
-              content: Text('Challenge Over'),
+            builder: (_) => AlertDialog(
+              title: const Text('Congratulations'),
+              content: Text('Congratulations\n本次问题数量:$totalquestion\n回答正确数量:$totalright\n回答错误数量:${totalwrong+totalskip}\n总用时:$totaltime'),
             ),
           ).then((_) => Navigator.of(context).pop());
         }
       });
     } else {
+      totalwrong++;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -239,14 +280,22 @@ class _FaceSaviorPageState extends State<FaceSaviorPage> {
   void nextPerson() {
     setState(() {
       index = (index + 1) % data.length;
+      a=10;
+      final order = Random(null).nextInt(disorders.length);
+      smallstop();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if(frii){
+      smallstop();
+      recod();
+      frii=false;
+    }
     final candidates = List.generate(4, (i) => data[(index + i) % data.length]);
-
-    final order = Random(null).nextInt(disorders.length);
+    const order=1;
+    if(fri){Random(null).nextInt(disorders.length);fri=false;}
     final children = [0, 1, 2, 3].map((i) {
       final choice = ['A', 'B', 'C', 'D'][i];
       final oi = disorders[order][i];
@@ -271,8 +320,9 @@ class _FaceSaviorPageState extends State<FaceSaviorPage> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Face Savior'),
+
+    appBar: AppBar(
+        title:  Text('倒计时 $a 秒钟'),
       ),
       body: ListView(
         children: [
@@ -290,6 +340,10 @@ class QuestionWidget extends StatelessWidget {
   const QuestionWidget({Key? key, required this.person}) : super(key: key);
 
   final PersonalSeri person;
+  void st(){
+    sstop();
+    recstop();
+  }
 
   @override
   Widget build(BuildContext context) {
